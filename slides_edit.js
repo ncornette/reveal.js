@@ -1,7 +1,7 @@
 
 var slideNum = 0;
 var subSlideNum = 0;
-var lineNum = 0;
+var lineNum = -1;
 
 $( document ).ready(function() {
 
@@ -12,26 +12,23 @@ $( document ).ready(function() {
     // Replace preview panel with iframe with slides
     $("#html_result").replaceWith('<iframe id="slides-preview" src="http://localhost:8424" style="width: 100%; height: 100%"/>')
 
-    // Disable html preview
-    ajaxUpdatePreview = function() {}
-
-    // Move to current Slide
-    myCodeMirror.on("cursorActivity", function(instance) {
-        var newLineNum = instance.getCursor().line
+    function update_slide_position(instance) {
+        cursor = instance.getCursor()
+        var newLineNum = cursor.line + (cursor.ch && 1)
         if (newLineNum != lineNum) {
             lineNum = newLineNum;
             newSlideNum = 0;
             for (var i=0; i<lineNum; i++) {
-                if (instance.getLine(i) == '------') {
+                if (instance.getLine(i).match('^------[^-]*$')) {
                     newSlideNum++;
                 }
             }
             
             newSubSlideNum = 0;
             for (var i=lineNum-1; i>0; i--) {
-                if (instance.getLine(i) == '---') {
+                if (instance.getLine(i).match('^---[^-]*$')) {
                     newSubSlideNum++;
-                } else if (instance.getLine(i) == '------') {
+                } else if (instance.getLine(i).match('^------[^-]*$')) {
                     break;
                 }
             }
@@ -39,10 +36,21 @@ $( document ).ready(function() {
             if (newSlideNum != slideNum || newSubSlideNum != subSlideNum) {
                 slideNum = newSlideNum;
                 subSlideNum = newSubSlideNum;
-                var newUrl = 'http://localhost:8424/#/' + slideNum + '/'  + subSlideNum
-                $('#slides-preview').attr('src', newUrl)
+                var h_v = slideNum + '/'  + subSlideNum;
+                // console.log("update_slide_position: " + h_v);
+                var newUrl = 'http://localhost:8424/#/' + h_v;
+                $('#slides-preview').attr('src', newUrl);
             }
         }
+    }
+
+    // Disable html preview
+    ajaxUpdatePreview = function() {
+    }
+
+    // Move to current Slide
+    myCodeMirror.on("cursorActivity", function(instance) {
+        update_slide_position(instance)
     });
 });
 
