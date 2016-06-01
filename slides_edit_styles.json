@@ -1,0 +1,17 @@
+{
+    "style_first": [
+    ],
+    "style_default": [
+    ],
+    "styles": {
+        "red": [
+            "<!-- .slide: data-background-color=\"#ff0000\" -->"
+        ],
+        "green": [
+            "<!-- .slide: data-background-color=\"#00ff00\" -->"
+        ],
+        "blue": [
+            "<!-- .slide: data-background-color=\"#0000ff\" -->"
+        ]
+    }
+}

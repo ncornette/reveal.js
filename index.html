@@ -26,16 +26,33 @@
 			<div class="slides">
 				<section
 					data-markdown
-					data-separator="^------"
-					data-separator-vertical="^---"
+					data-separator="^------( .*|)$"
+					data-separator-vertical="^---( .*|)$"
 					data-separator-notes="^Note:"
 					data-charset="utf-8">
 					<script type="text/template">
+
 Slide 1
----
-Slide 1.1
+
 ------
+
 Slide 2
+
+------ .style: red
+<!-- .slide: data-background-color="#ff0000" -->
+
+Slide 3
+
+------ .style: green
+<!-- .slide: data-background-color="#00ff00" -->
+
+Slide 4
+
+------ .style: blue
+<!-- .slide: data-background-color="#0000ff" -->
+
+Slide 5
+
 					</script>
 				</section>
 			</div>
