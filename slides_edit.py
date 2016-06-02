@@ -57,6 +57,7 @@ def main():  # pragma: no cover
     # Parse options and adjust logging level if necessary
     options, logging_level = editor.parse_options()
     if not options: sys.exit(2)
+    if not options.get('input'): options['input'] = 'index.html'
     logger.setLevel(logging_level)
     logger.addHandler(logging.StreamHandler())
 
