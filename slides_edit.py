@@ -14,7 +14,7 @@ from functools import partial
 logger = logging.getLogger('MARKDOWN_EDITOR')
 
 def markdown_in(md_text):
-    md_nostyle = re.sub('(\n(?:------|---) \.style: .*\n)(?:<!--.*-->\n)*', '\\1', md_text)
+    md_nostyle = re.sub('(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', '\\1', md_text)
     md_nostyle = re.sub('^(?:<!--.*\n)*', '', md_nostyle, 1, re.MULTILINE)
     return md_nostyle
 
@@ -24,7 +24,7 @@ def markdown_out(md_text, config):
     md_addstyle = re.sub('(\n(?:------|---)\n)', '\\1' + '\n'.join(config.get('style_default') + ['']), md_addstyle)
 
     for style in config.get('styles'):
-        md_addstyle = re.sub('(\n(?:------|---) .style: {}\n)'.format(style), '\\1' + '\n'.join(config.get('styles').get(style) + ['']), md_addstyle)
+        md_addstyle = re.sub('(\n(?:------|---) \.style: {}\n)'.format(style), '\\1' + '\n'.join(config.get('styles').get(style) + ['']), md_addstyle)
 
     return md_addstyle
 
