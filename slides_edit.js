@@ -5,6 +5,10 @@ var lineNum = -1;
 
 $( document ).ready(function() {
 
+    var actions = $('#mdedit').children()
+    actions[0].setAttribute('class', 'col-sm-4')
+    actions[1].setAttribute('class', 'col-sm-8')
+
     var panels = $('#mdedit-body').children()
     panels[0].setAttribute('class', 'col-sm-4')
     panels[1].setAttribute('class', 'col-sm-8')

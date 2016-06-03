@@ -1,1 +1,1 @@
-Markdown-Editor==0.9.5
+Markdown-Editor==0.9.7

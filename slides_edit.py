@@ -8,6 +8,7 @@ import codecs
 import json
 from string import Template
 from markdown_edit import editor
+from editor import Action
 import subprocess
 from functools import partial
 
@@ -52,6 +53,9 @@ def action_save(config, document):
 
     return None, True
 
+def action_preview(document):
+    return None, 'http://localhost:8424/'
+
 def main():  # pragma: no cover
 
     # Parse options and adjust logging level if necessary
@@ -77,9 +81,10 @@ def main():  # pragma: no cover
     input_basename = os.path.basename(doc.input_file)
 
     editor.action_save = partial(action_save, './slides_edit_styles.json')
+    editor.action_preview = action_preview
 
     editor.web_edit(
-        doc, 
+        doc, [('Print', lambda d: (None, 'http://localhost:8424/?print-pdf'))],
         port=options['port'], 
         title=HEADER_TEMPLATE.substitute(name=input_basename, js=js_content)
     )
