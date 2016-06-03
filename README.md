@@ -35,9 +35,18 @@ Declare your styles in `slides_edit_styles.json`
 ```
 
 Then refer to it by using separators like this in the editor : 
+```markdown
 
- - `------ .style: red` for horizontal slides
- - `--- .style: green` for vertical sub-slides
+Slide 1
+
+------ .style: red
+
+Slide 2
+
+--- .style: green
+
+Slide 2.1
+```
 
 Styles will be applied accordingly into `index.html` for you.
 
