@@ -1,3 +1,46 @@
+# Markdown Editor for reveal.js
+
+### Installation
+```sh
+$ npm install
+$ pip install -r slides_edit_requirements.txt
+```
+
+### Launch editor
+```sh
+$ ./slides_edit.py
+```
+I will read and write into `index.html` directly to keep the slides working in static mode.
+
+### Declare your styles 
+Declare your styles in `slides_edit_styles.json`
+```json
+{
+    "style_first": [
+    ],
+    "style_default": [
+    ],
+    "styles": {
+        "red": [
+            "<!-- .slide: data-background-color=\"#ff0000\" -->"
+        ],
+        "green": [
+            "<!-- .slide: data-background-color=\"#00ff00\" -->"
+        ],
+        "blue": [
+            "<!-- .slide: data-background-color=\"#0000ff\" -->"
+        ]
+    }
+}
+```
+
+Then refer to it by using separators like this in the editor : 
+
+ - `------ .style: red` for horizontal slides
+ - `--- .style: green` for vertical sub-slides
+
+Styles will be applied accordingly into `index.html` for you.
+
 # reveal.js [![Build Status](https://travis-ci.org/hakimel/reveal.js.svg?branch=master)](https://travis-ci.org/hakimel/reveal.js)
 
 A framework for easily creating beautiful presentations using HTML. [Check out the live demo](http://lab.hakim.se/reveal-js/).
