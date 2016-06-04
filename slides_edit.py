@@ -90,7 +90,7 @@ def main():  # pragma: no cover
 
     try:
         editor.web_edit(
-            doc, [('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
+            doc, [Action('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
             port=options['port'], 
             title=HEADER_TEMPLATE.substitute(name=input_basename, reveal_port=reveal_port, js=js_content)
         )
