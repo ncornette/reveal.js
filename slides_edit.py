@@ -17,23 +17,23 @@ logger = logging.getLogger('MARKDOWN_EDITOR')
 reveal_port = 8424
 
 def markdown_in(md_text):
-    md_nostyle = re.sub('(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', '\\1', md_text)
-    md_nostyle = re.sub('^(?:<!--.*\n)*', '', md_nostyle, 1, re.MULTILINE)
+    md_nostyle = re.sub(u'(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', u'\\1', md_text)
+    md_nostyle = re.sub(u'^(?:<!--.*\n)*', u'', md_nostyle, 1, re.MULTILINE)
     return md_nostyle
 
 def markdown_out(md_text, config):
-    md_addstyle = '\n'.join(config.get('style_first')) + '\n' + md_text
+    md_addstyle = u'\n'.join(config.get('style_first')) + u'\n' + md_text
 
-    md_addstyle = re.sub('(\n(?:------|---)\n)', '\\1' + '\n'.join(config.get('style_default') + ['']), md_addstyle)
+    md_addstyle = re.sub(u'(\n(?:------|---)\n)', '\\1' + u'\n'.join(config.get('style_default') + ['']), md_addstyle)
 
     for style in config.get('styles'):
-        md_addstyle = re.sub('(\n(?:------|---) \.style: {}\n)'.format(style), '\\1' + '\n'.join(config.get('styles').get(style) + ['']), md_addstyle)
+        md_addstyle = re.sub(u'(\n(?:------|---) \.style: {}\n)'.format(style), u'\\1' + u'\n'.join(config.get('styles').get(style) + ['']), md_addstyle)
 
     return md_addstyle
 
 def get_markdown(html_file_input):
     with codecs.open(html_file_input, 'r', 'utf-8') as f:
-        md_text = re.findall(r'<section.*<script type="text/template">\n(.*)\n\t*</script>.*</section>', f.read(), re.DOTALL)[0]
+        md_text = re.findall(u'<section.*<script type="text/template">\n(.*)\n\t*</script>.*</section>', f.read(), re.DOTALL)[0]
         return markdown_in(md_text)
 
 def action_save(config, document):
@@ -46,17 +46,17 @@ def action_save(config, document):
         try:
             config = json.load(f)
         except ValueError as e:
-            config = {"style_first": [], "style_default": [], "styles": {}}
+            config = {u'style_first': [], u'style_default': [], u'styles': {}}
             raise e
         finally:
-            html_new = re.sub(r'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)', ur'\1{}\2'.format(markdown_out(document.text, config)), html, 1, re.DOTALL)
+            html_new = re.sub(u'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)', u'\\1{}\\2'.format(markdown_out(document.text, config)), html, 1, re.DOTALL)
             if document.input_file:
                 editor.write_output(document.input_file, html_new)
 
     return None, True
 
 def action_preview(document):
-    return None, 'http://localhost:{}/#/{}'.format(reveal_port, document.slide_ref.get('slide'))
+    return None, u'http://localhost:{}/#/{}'.format(reveal_port, document.slide_ref.get('slide'))
 
 def ajax_preview(document, data):
     document.slide_ref = json.loads(data)
