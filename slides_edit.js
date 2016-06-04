@@ -1,6 +1,6 @@
 
-var slideNum = 0;
-var subSlideNum = 0;
+var slideNum = -1;
+var subSlideNum = -1;
 var lineNum = -1;
 
 $( document ).ready(function() {
@@ -14,7 +14,7 @@ $( document ).ready(function() {
     panels[1].setAttribute('class', 'col-sm-8')
 
     // Replace preview panel with iframe with slides
-    $("#html_result").replaceWith('<iframe id="slides-preview" src="http://localhost:' + reveal_port + '" style="width: 100%; height: 100%"/>')
+    $("#html_result").replaceWith('<iframe id="slides-preview" src="" style="width: 100%; height: 100%"/>')
 
     function update_slide_position(instance) {
         cursor = instance.getCursor()
@@ -40,10 +40,10 @@ $( document ).ready(function() {
             if (newSlideNum != slideNum || newSubSlideNum != subSlideNum) {
                 slideNum = newSlideNum;
                 subSlideNum = newSubSlideNum;
-                var h_v = slideNum + '/'  + subSlideNum;
-                // console.log("update_slide_position: " + h_v);
-                var newUrl = 'http://localhost:' + reveal_port + '/#/' + h_v;
+                slide_ref = slideNum + '/' + subSlideNum;
+                var newUrl = 'http://localhost:' + reveal_port + '/#/' + slide_ref;
                 $('#slides-preview').attr('src', newUrl);
+                $.post( "ajaxPreview", JSON.stringify({slide: slide_ref}));
             }
         }
     }
@@ -56,5 +56,7 @@ $( document ).ready(function() {
     myCodeMirror.on("cursorActivity", function(instance) {
         update_slide_position(instance)
     });
+    
+    update_slide_position(myCodeMirror)
 });
 

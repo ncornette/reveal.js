@@ -56,7 +56,11 @@ def action_save(config, document):
     return None, True
 
 def action_preview(document):
-    return None, 'http://localhost:{}/'.format(reveal_port)
+    return None, 'http://localhost:{}/#/{}'.format(reveal_port, document.slide_ref.get('slide'))
+
+def ajax_preview(document, data):
+    document.slide_ref = json.loads(data)
+    return u'OK'
 
 def main():  # pragma: no cover
 
@@ -77,6 +81,8 @@ def main():  # pragma: no cover
 
     doc = editor.MarkdownDocument(mdtext=get_markdown(options['input']), infile=options['input'], outfile=options['output'])
 
+    doc.slide_ref = {'slide': ''}
+
     with open('./slides_edit.js', 'r') as f:
         js_content = f.read()
 
@@ -87,12 +93,16 @@ def main():  # pragma: no cover
 
     editor.action_save = partial(action_save, './slides_edit_styles.json')
     editor.action_preview = action_preview
+    editor.ajax_preview = ajax_preview
 
     try:
         editor.web_edit(
             doc, [Action('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
             port=options['port'], 
-            title=HEADER_TEMPLATE.substitute(name=input_basename, reveal_port=reveal_port, js=js_content)
+            title=HEADER_TEMPLATE.substitute(
+                name=input_basename, 
+                reveal_port=reveal_port, 
+                js=js_content)
         )
     finally:
         npm_start.terminate()
