@@ -14,6 +14,8 @@ from functools import partial
 
 logger = logging.getLogger('MARKDOWN_EDITOR')
 
+reveal_port = 8424
+
 def markdown_in(md_text):
     md_nostyle = re.sub('(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', '\\1', md_text)
     md_nostyle = re.sub('^(?:<!--.*\n)*', '', md_nostyle, 1, re.MULTILINE)
@@ -54,7 +56,7 @@ def action_save(config, document):
     return None, True
 
 def action_preview(document):
-    return None, 'http://localhost:8424/'
+    return None, 'http://localhost:{}/'.format(reveal_port)
 
 def main():  # pragma: no cover
 
@@ -67,7 +69,10 @@ def main():  # pragma: no cover
 
     HEADER_TEMPLATE = Template(u"""\
         &nbsp;<span class="glyphicon glyphicon-edit"></span>&nbsp;<span>${name}</span>
-        <script>${js}</script>"""
+        <script>
+            var reveal_port = ${reveal_port};
+            ${js}
+        </script>"""
     )
 
     doc = editor.MarkdownDocument(mdtext=get_markdown(options['input']), infile=options['input'], outfile=options['output'])
@@ -75,7 +80,7 @@ def main():  # pragma: no cover
     with open('./slides_edit.js', 'r') as f:
         js_content = f.read()
 
-    npm_start = subprocess.Popen(['npm', 'start', '--', '--port', '8424'])
+    npm_start = subprocess.Popen(['npm', 'start', '--', '--port', str(reveal_port)])
     import time; time.sleep(1) # wait for reveal
     
     input_basename = os.path.basename(doc.input_file)
@@ -83,13 +88,14 @@ def main():  # pragma: no cover
     editor.action_save = partial(action_save, './slides_edit_styles.json')
     editor.action_preview = action_preview
 
-    editor.web_edit(
-        doc, [('Print', lambda d: (None, 'http://localhost:8424/?print-pdf'))],
-        port=options['port'], 
-        title=HEADER_TEMPLATE.substitute(name=input_basename, js=js_content)
-    )
-    
-    npm_start.terminate()
+    try:
+        editor.web_edit(
+            doc, [('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
+            port=options['port'], 
+            title=HEADER_TEMPLATE.substitute(name=input_basename, reveal_port=reveal_port, js=js_content)
+        )
+    finally:
+        npm_start.terminate()
 
 if __name__ == '__main__':
     main()

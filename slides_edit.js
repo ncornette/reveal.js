@@ -14,7 +14,7 @@ $( document ).ready(function() {
     panels[1].setAttribute('class', 'col-sm-8')
 
     // Replace preview panel with iframe with slides
-    $("#html_result").replaceWith('<iframe id="slides-preview" src="http://localhost:8424" style="width: 100%; height: 100%"/>')
+    $("#html_result").replaceWith('<iframe id="slides-preview" src="http://localhost:' + reveal_port + '" style="width: 100%; height: 100%"/>')
 
     function update_slide_position(instance) {
         cursor = instance.getCursor()
@@ -42,7 +42,7 @@ $( document ).ready(function() {
                 subSlideNum = newSubSlideNum;
                 var h_v = slideNum + '/'  + subSlideNum;
                 // console.log("update_slide_position: " + h_v);
-                var newUrl = 'http://localhost:8424/#/' + h_v;
+                var newUrl = 'http://localhost:' + reveal_port + '/#/' + h_v;
                 $('#slides-preview').attr('src', newUrl);
             }
         }
