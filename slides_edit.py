@@ -22,7 +22,7 @@ reveal_port = 8424
 class NoMarkdownDocument(MarkdownDocument):
 
     def __init__(self, mdtext='', infile=None, outfile=None, md=None):
-        super().__init__(mdtext, infile, outfile, md, None, None)
+        MarkdownDocument.__init__(self, mdtext, infile, outfile, md, None, None)
         self.slides_data = {'slide_ref': ''}
 
     def get_html(self):
