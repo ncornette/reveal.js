@@ -7,19 +7,33 @@ import logging
 import codecs
 import json
 from string import Template
-from markdown_edit import editor
-from editor import Action
 import subprocess
 from functools import partial
+
+import sys
+from markdown_editor import editor
+from markdown_editor.editor import Action, MarkdownDocument
 
 logger = logging.getLogger('MARKDOWN_EDITOR')
 
 reveal_port = 8424
 
+
+class NoMarkdownDocument(MarkdownDocument):
+
+    def __init__(self, mdtext='', infile=None, outfile=None, md=None):
+        super().__init__(mdtext, infile, outfile, md, None, None)
+        self.slides_data = {'slide_ref': ''}
+
+    def get_html(self):
+        return u''
+
+
 def markdown_in(md_text):
     md_nostyle = re.sub(u'(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', u'\\1', md_text)
     md_nostyle = re.sub(u'^(?:<!--.*\n)*', u'', md_nostyle, 1, re.MULTILINE)
     return md_nostyle
+
 
 def markdown_out(md_text, config):
     md_addstyle = u'\n'.join(config.get('style_first')) + u'\n' + md_text
@@ -31,10 +45,12 @@ def markdown_out(md_text, config):
 
     return md_addstyle
 
+
 def get_markdown(html_file_input):
     with codecs.open(html_file_input, 'r', 'utf-8') as f:
         md_text = re.findall(u'<section.*<script type="text/template">\n(.*)\n\t*</script>.*</section>', f.read(), re.DOTALL)[0]
         return markdown_in(md_text)
+
 
 def action_save(config, document):
     document.fix_crlf_input_text()
@@ -55,12 +71,15 @@ def action_save(config, document):
 
     return None, True
 
-def action_preview(document):
-    return None, u'http://localhost:{}/#/{}'.format(reveal_port, document.slide_ref.get('slide'))
 
-def ajax_preview(document, data):
-    document.slide_ref = json.loads(data)
+def action_preview(document):
+    return None, u'http://localhost:{}/#/{}'.format(reveal_port, document.slides_data.get('slide_ref'))
+
+
+def ajax_update_status(document, data):
+    document.slides_data = json.loads(data)
     return u'OK'
+
 
 def main():  # pragma: no cover
 
@@ -79,21 +98,18 @@ def main():  # pragma: no cover
         </script>"""
     )
 
-    doc = editor.MarkdownDocument(mdtext=get_markdown(options['input']), infile=options['input'], outfile=options['output'])
-
-    doc.slide_ref = {'slide': ''}
+    doc = NoMarkdownDocument(mdtext=get_markdown(options['input']), infile=options['input'], outfile=options['output'])
 
     with open('./slides_edit.js', 'r') as f:
         js_content = f.read()
 
     npm_start = subprocess.Popen(['npm', 'start', '--', '--port', str(reveal_port)])
-    import time; time.sleep(1) # wait for reveal
+    import time; time.sleep(1)  # wait for reveal
     
     input_basename = os.path.basename(doc.input_file)
 
     editor.action_save = partial(action_save, './slides_edit_styles.json')
     editor.action_preview = action_preview
-    editor.ajax_preview = ajax_preview
 
     try:
         editor.web_edit(
@@ -102,7 +118,8 @@ def main():  # pragma: no cover
             title=HEADER_TEMPLATE.substitute(
                 name=input_basename, 
                 reveal_port=reveal_port, 
-                js=js_content)
+                js=js_content),
+            ajax_handlers={'ajaxUpdateStatus': ajax_update_status}
         )
     finally:
         npm_start.terminate()
