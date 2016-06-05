@@ -5,20 +5,20 @@ var lineNum = -1;
 
 $( document ).ready(function() {
 
-    var actions = $('#mdedit').children()
-    actions[0].setAttribute('class', 'col-sm-4')
-    actions[1].setAttribute('class', 'col-sm-8')
+    var actions = $('#mdedit').children();
+    actions[0].setAttribute('class', 'col-sm-4');
+    actions[1].setAttribute('class', 'col-sm-8');
 
-    var panels = $('#mdedit-body').children()
-    panels[0].setAttribute('class', 'col-sm-4')
-    panels[1].setAttribute('class', 'col-sm-8')
+    var panels = $('#mdedit-body').children();
+    panels[0].setAttribute('class', 'col-sm-4');
+    panels[1].setAttribute('class', 'col-sm-8');
 
     // Replace preview panel with iframe with slides
-    $("#html_result").replaceWith('<iframe id="slides-preview" src="" style="width: 100%; height: 100%"/>')
+    $("#html_result").replaceWith('<iframe id="slides-preview" src="" style="width: 100%; height: 100%"/>');
 
     function update_slide_position(instance) {
-        cursor = instance.getCursor()
-        var newLineNum = cursor.line + (cursor.ch && 1)
+        cursor = instance.getCursor();
+        var newLineNum = cursor.line + (cursor.ch && 1);
         if (newLineNum != lineNum) {
             lineNum = newLineNum;
             newSlideNum = 0;
@@ -43,7 +43,7 @@ $( document ).ready(function() {
                 slide_ref = slideNum + '/' + subSlideNum;
                 var newUrl = 'http://localhost:' + reveal_port + '/#/' + slide_ref;
                 $('#slides-preview').attr('src', newUrl);
-                $.post( "ajaxPreview", JSON.stringify({slide: slide_ref}));
+                $.post( "ajaxUpdateStatus", JSON.stringify({slide_ref: slide_ref}));
             }
         }
     }
@@ -54,9 +54,9 @@ $( document ).ready(function() {
 
     // Move to current Slide
     myCodeMirror.on("cursorActivity", function(instance) {
-        update_slide_position(instance)
+        update_slide_position(instance);
     });
-    
-    update_slide_position(myCodeMirror)
+
+    update_slide_position(myCodeMirror);
 });
 
