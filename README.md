@@ -3,7 +3,7 @@
 ### Installation
 ```sh
 $ npm install
-$ pip install -r slides_edit_requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ### Launch editor

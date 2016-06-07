@@ -8,25 +8,47 @@ import codecs
 import json
 from string import Template
 import subprocess
-from functools import partial
 
 import sys
-from markdown_editor import editor
-from markdown_editor.editor import Action, MarkdownDocument
+
+from markdown_edit import parse_options
+from markdown_editor import editor, web_edit
+from markdown_editor.editor import MarkdownDocument, Action
+from markdown_editor.web_edit import WebAction
 
 logger = logging.getLogger('MARKDOWN_EDITOR')
 
 reveal_port = 8424
 
 
-class NoMarkdownDocument(MarkdownDocument):
+class RevealMarkdownDocument(MarkdownDocument):
 
-    def __init__(self, mdtext='', infile=None, outfile=None, md=None):
+    def __init__(self, config_file, mdtext='', infile=None, outfile=None, md=None):
         MarkdownDocument.__init__(self, mdtext, infile, outfile, md, None, None)
+        self.config_file = config_file
         self.slides_data = {'slide_ref': ''}
 
     def get_html(self):
         return u''
+
+    def save(self):
+        self.fix_crlf_input_text()
+
+        with codecs.open(self.input_file, 'r', 'utf-8') as f:
+            html = f.read()
+
+        with open(self.config_file, 'r') as f:
+            try:
+                config = json.load(f)
+            except ValueError as e:
+                config = {u'style_first': [], u'style_default': [], u'styles': {}}
+                raise e
+            finally:
+                html_new = re.sub(u'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)', u'\\1{}\\2'.format(markdown_out(self.text, config)), html, 1, re.DOTALL)
+                if self.input_file:
+                    editor.write_output(self.input_file, html_new)
+
+        return None, True
 
 
 def markdown_in(md_text):
@@ -52,26 +74,6 @@ def get_markdown(html_file_input):
         return markdown_in(md_text)
 
 
-def action_save(config, document):
-    document.fix_crlf_input_text()
-
-    with codecs.open(document.input_file, 'r', 'utf-8') as f:
-        html = f.read()
-
-    with open(config, 'r') as f:
-        try:
-            config = json.load(f)
-        except ValueError as e:
-            config = {u'style_first': [], u'style_default': [], u'styles': {}}
-            raise e
-        finally:
-            html_new = re.sub(u'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)', u'\\1{}\\2'.format(markdown_out(document.text, config)), html, 1, re.DOTALL)
-            if document.input_file:
-                editor.write_output(document.input_file, html_new)
-
-    return None, True
-
-
 def action_preview(document):
     return None, u'http://localhost:{}/#/{}'.format(reveal_port, document.slides_data.get('slide_ref'))
 
@@ -84,7 +86,7 @@ def ajax_update_status(document, data):
 def main():  # pragma: no cover
 
     # Parse options and adjust logging level if necessary
-    options, logging_level = editor.parse_options()
+    options, logging_level = parse_options()
     if not options: sys.exit(2)
     if not options.get('input'): options['input'] = 'index.html'
     logger.setLevel(logging_level)
@@ -95,10 +97,11 @@ def main():  # pragma: no cover
         <script>
             var reveal_port = ${reveal_port};
             ${js}
-        </script>"""
-    )
+        </script>""")
 
-    doc = NoMarkdownDocument(mdtext=get_markdown(options['input']), infile=options['input'], outfile=options['output'])
+    doc = RevealMarkdownDocument('./slides_edit_styles.json',
+                                 mdtext=get_markdown(options['input']),
+                                 infile=options['input'], outfile=options['output'])
 
     with open('./slides_edit.js', 'r') as f:
         js_content = f.read()
@@ -108,12 +111,11 @@ def main():  # pragma: no cover
     
     input_basename = os.path.basename(doc.input_file)
 
-    editor.action_save = partial(action_save, './slides_edit_styles.json')
-    editor.action_preview = action_preview
+    web_edit.action_preview = action_preview
 
     try:
-        editor.web_edit(
-            doc, [Action('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
+        web_edit.start(
+            doc, [WebAction('Print', lambda d: (None, 'http://localhost:{}/?print-pdf'.format(reveal_port)))],
             port=options['port'], 
             title=HEADER_TEMPLATE.substitute(
                 name=input_basename, 
