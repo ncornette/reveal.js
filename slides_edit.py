@@ -121,7 +121,7 @@ def main():  # pragma: no cover
                 name=input_basename, 
                 reveal_port=reveal_port, 
                 js=js_content),
-            ajax_handlers={'ajaxUpdateStatus': ajax_update_status}
+            ajax_handlers={'update_status': ajax_update_status}
         )
     finally:
         npm_start.terminate()
