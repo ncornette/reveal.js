@@ -43,7 +43,7 @@ $( document ).ready(function() {
                 slide_ref = slideNum + '/' + subSlideNum;
                 var newUrl = 'http://localhost:' + reveal_port + '/#/' + slide_ref;
                 $('#slides-preview').attr('src', newUrl);
-                $.post( "ajaxUpdateStatus", JSON.stringify({slide_ref: slide_ref}));
+                $.post( "/ajax/update_status", JSON.stringify({slide_ref: slide_ref}));
             }
         }
     }
