@@ -12,9 +12,19 @@ import subprocess
 import sys
 
 from markdown_edit import parse_options
-from markdown_editor import editor, web_edit
-from markdown_editor.editor import MarkdownDocument, Action
+from markdown_editor import web_edit
+from markdown_editor.editor import MarkdownDocument, write_output, read_input
 from markdown_editor.web_edit import WebAction
+
+STYLE_DEFAULT_CONFIG = {u'style_first': [], u'style_default': [], u'styles': {}}
+
+
+HEADER_TEMPLATE = Template(u"""\
+        &nbsp;<span class="glyphicon glyphicon-edit"></span>&nbsp;<span>${name}</span>
+        <script>
+            var reveal_port = ${reveal_port};
+            ${js}
+        </script>""")
 
 logger = logging.getLogger('MARKDOWN_EDITOR')
 
@@ -23,55 +33,66 @@ reveal_port = 8424
 
 class RevealMarkdownDocument(MarkdownDocument):
 
-    def __init__(self, config_file, mdtext='', infile=None, outfile=None, md=None):
+    def __init__(self, styles_config_file, mdtext='', infile=None, outfile=None, md=None):
         MarkdownDocument.__init__(self, mdtext, infile, outfile, md, None, None)
-        self.config_file = config_file
+        self.styles_config_file = styles_config_file
         self.slides_data = {'slide_ref': ''}
+        self.save(False)
 
     def get_html(self):
         return u''
 
-    def save(self):
+    def save(self, input_also=True):
         self.fix_crlf_input_text()
 
-        with codecs.open(self.input_file, 'r', 'utf-8') as f:
+        with codecs.open(self.output_file, 'r', 'utf-8') as f:
             html = f.read()
 
-        with open(self.config_file, 'r') as f:
+        with open(self.styles_config_file, 'r') as f:
             try:
-                config = json.load(f)
+                styles_config = json.load(f)
             except ValueError as e:
-                config = {u'style_first': [], u'style_default': [], u'styles': {}}
+                styles_config = STYLE_DEFAULT_CONFIG
                 raise e
             finally:
-                html_new = re.sub(u'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)', u'\\1{}\\2'.format(markdown_out(self.text, config)), html, 1, re.DOTALL)
-                if self.input_file:
-                    editor.write_output(self.input_file, html_new)
+                md_out = restore_styles_to_markdown(self.text, styles_config)
+                write_output(self.input_file, md_out) if input_also else None
+                html_new = self.replace_md_into_html(md_out, html, styles_config)
+                write_output(self.output_file, html_new)
 
         return None, True
 
+    def replace_md_into_html(self, md_out, html, styles_config):
+        return re.sub(
+            u'(<section.*<script type="text/template">\n).*(\n\t*</script>.*</section>)',
+            u'\\1{}\\2'.format(md_out), html, 1, re.DOTALL)
 
-def markdown_in(md_text):
+
+def remove_styles_from_markdown(md_text):
     md_nostyle = re.sub(u'(\n(?:------|---)(?: \.style: .*)?\n)(?:<!--.*-->\n)*', u'\\1', md_text)
     md_nostyle = re.sub(u'^(?:<!--.*\n)*', u'', md_nostyle, 1, re.MULTILINE)
     return md_nostyle
 
 
-def markdown_out(md_text, config):
-    md_addstyle = u'\n'.join(config.get('style_first')) + u'\n' + md_text
+def restore_styles_to_markdown(md_text, styles_config):
 
-    md_addstyle = re.sub(u'(\n(?:------|---)\n)', '\\1' + u'\n'.join(config.get('style_default') + ['']), md_addstyle)
+    _ = styles_config.get('style_first')
+    md_addstyle = u'\n'.join(_) + u'\n' + md_text
 
-    for style in config.get('styles'):
-        md_addstyle = re.sub(u'(\n(?:------|---) \.style: {}\n)'.format(style), u'\\1' + u'\n'.join(config.get('styles').get(style) + ['']), md_addstyle)
+    _ = styles_config.get('style_default')
+    md_addstyle = re.sub(u'(\n(?:------|---)\n)', '\\1' + u'\n'.join(_ + ['']), md_addstyle)
+
+    _ = styles_config.get('styles')
+    for style in _:
+        md_addstyle = re.sub(u'(\n(?:------|---) \.style: {}\n)'.format(style), u'\\1' +
+                             u'\n'.join(_.get(style) + ['']), md_addstyle)
 
     return md_addstyle
 
 
-def get_markdown(html_file_input):
+def extract_markdown_from_section_template(html_file_input):
     with codecs.open(html_file_input, 'r', 'utf-8') as f:
-        md_text = re.findall(u'<section.*<script type="text/template">\n(.*)\n\t*</script>.*</section>', f.read(), re.DOTALL)[0]
-        return markdown_in(md_text)
+        return re.findall(u'<section.*<script type="text/template">\n(.*)\n\t*</script>.*</section>', f.read(), re.DOTALL)[0]
 
 
 def action_preview(document):
@@ -88,19 +109,22 @@ def main():  # pragma: no cover
     # Parse options and adjust logging level if necessary
     options, logging_level = parse_options()
     if not options: sys.exit(2)
-    if not options.get('input'): options['input'] = 'index.html'
+    if not options.get('input'): options['input'] = 'index.md'
+    if not options.get('output'): options['output'] = 'index.html'
     logger.setLevel(logging_level)
     logger.addHandler(logging.StreamHandler())
 
-    HEADER_TEMPLATE = Template(u"""\
-        &nbsp;<span class="glyphicon glyphicon-edit"></span>&nbsp;<span>${name}</span>
-        <script>
-            var reveal_port = ${reveal_port};
-            ${js}
-        </script>""")
+    if not os.path.exists('index.md'):
+        md_text = extract_markdown_from_section_template(options['output'])
+        write_output('index.md', md_text)
+
+    if not os.path.exists(options['input']):
+        md_text = 'Slide1\n------\nSlide2'
+    else:
+        md_text = read_input(options['input'])
 
     doc = RevealMarkdownDocument('./slides_edit_styles.json',
-                                 mdtext=get_markdown(options['input']),
+                                 mdtext=remove_styles_from_markdown(md_text),
                                  infile=options['input'], outfile=options['output'])
 
     with open('./slides_edit.js', 'r') as f:
