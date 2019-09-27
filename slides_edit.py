@@ -130,7 +130,7 @@ def main():  # pragma: no cover
     with open('./slides_edit.js', 'r') as f:
         js_content = f.read()
 
-    npm_start = subprocess.Popen(['npm', 'start', '--', '--port', str(reveal_port)])
+    npm_start = subprocess.Popen(['npm', 'start', '--', '--port={}'.format(reveal_port)])
     import time; time.sleep(1)  # wait for reveal
     
     input_basename = os.path.basename(doc.input_file)
